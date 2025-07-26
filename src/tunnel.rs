@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::io::{Read, Write, copy};
+use std::io::{BufReader, Read, Write, copy};
 use std::net::{TcpListener, TcpStream};
 
 pub fn connect(address: &str) -> Result<Connection, Box<dyn Error>> {
@@ -36,11 +36,10 @@ impl Connection {
     }
 
     pub fn read_message(&self) -> Result<String, Box<dyn Error>> {
+        let mut reader = BufReader::new(&self.stream);
         let mut buffer = [0; 1024];
-        let mut stream = self.stream.try_clone()?;
-        stream.read(&mut buffer)?;
-        stream.flush()?;
-        Ok(String::from_utf8_lossy(&buffer).into_owned())
+        let bytes_read = reader.read(&mut buffer)?;
+        Ok(String::from_utf8_lossy(&buffer[..bytes_read]).into_owned())
     }
 
     pub fn relay_stream(&mut self, mut stream: TcpStream) -> Result<(), Box<dyn Error>> {
