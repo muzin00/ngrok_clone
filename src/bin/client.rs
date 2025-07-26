@@ -5,6 +5,9 @@ fn main() {
 
     loop {
         let msg = conn.read_message().unwrap();
+        if msg.is_empty() {
+            break;
+        }
         println!("Received message: {}", msg);
     }
 }
