@@ -2,9 +2,9 @@ use std::error::Error;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-pub fn connect(address: &str) -> Connection {
-    let stream = TcpStream::connect(address).unwrap();
-    Connection { stream }
+pub fn connect(address: &str) -> Result<Connection, Box<dyn Error>> {
+    let stream = TcpStream::connect(address)?;
+    Ok(Connection { stream })
 }
 
 pub struct Connection {
