@@ -1,6 +1,8 @@
 use std::error::Error;
 use std::io::{BufReader, Read, Write, copy};
 use std::net::{TcpListener, TcpStream};
+use std::sync::Arc;
+use std::thread;
 
 pub fn connect(address: &str) -> Result<Connection, Box<dyn Error>> {
     let stream = TcpStream::connect(address)?;
@@ -17,9 +19,19 @@ impl TunnelServer {
         Ok(TunnelServer { listener: listener })
     }
 
-    pub fn accept(&self) -> Result<Connection, Box<dyn Error>> {
-        let (stream, _) = self.listener.accept()?;
-        Ok(Connection { stream })
+    pub fn on_connect<F>(&self, callback: F)
+    where
+        F: Fn(Connection) + Send + Sync + 'static,
+    {
+        let callback = Arc::new(callback);
+        for stream in self.listener.incoming() {
+            let callback = Arc::clone(&callback);
+            thread::spawn(move || {
+                callback(Connection {
+                    stream: stream.unwrap(),
+                });
+            });
+        }
     }
 }
 
