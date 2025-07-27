@@ -5,6 +5,8 @@ fn main() {
 
     loop {
         let msg = conn.read_message().unwrap();
+        conn.send_message("HTTP/1.1 204 No Content\r\n\r\n")
+            .unwrap();
         if msg.is_empty() {
             break;
         }

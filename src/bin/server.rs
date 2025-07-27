@@ -12,6 +12,7 @@ fn main() {
         for stream in web_listener.incoming() {
             println!("TCP通信を中継します");
             conn.relay_stream(stream.unwrap()).unwrap();
+            println!("TCP通信を中継しました");
         }
     });
 }

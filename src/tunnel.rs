@@ -55,7 +55,39 @@ impl Connection {
     }
 
     pub fn relay_stream(&mut self, mut stream: TcpStream) -> Result<(), Box<dyn Error>> {
-        copy(&mut stream, &mut self.stream)?;
+        self.stream.set_nonblocking(true)?;
+        stream.set_nonblocking(true)?;
+
+        let mut buffer = [0; 1024];
+
+        loop {
+            // 方向1: stream → self.stream
+            match stream.read(&mut buffer) {
+                Ok(0) => break, // 接続終了
+                Ok(n) => {
+                    self.stream.write_all(&buffer[..n])?;
+                }
+                Err(e) => {
+                    if e.kind() != std::io::ErrorKind::WouldBlock {
+                        break; // その他のエラー
+                    }
+                }
+            }
+
+            // 方向2: self.stream → stream
+            match self.stream.read(&mut buffer) {
+                Ok(0) => break, // 接続終了
+                Ok(n) => {
+                    stream.write_all(&buffer[..n])?;
+                }
+                Err(e) => {
+                    if e.kind() != std::io::ErrorKind::WouldBlock {
+                        break; // その他のエラー
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
